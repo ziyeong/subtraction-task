@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>뺄셈 스트레스 과업</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 상단 진행 바(타이머) + 문제 격자. 연구자 패널은 접어 둠 */
+:root{
+  --bg:#F3F6FB; --surface:#FFFFFF; --fg:#1E2430; --muted:#6B7280; --line:#E2E8F2;
+  --accent:#3B7BE0; --accent-soft:#E8F0FC; --warn:#C2410C; --warn-soft:#FFF1E7; --ok:#15803D;
+  --font:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161D; --surface:#1A2029; --fg:#E7ECF3; --muted:#9AA4B2; --line:#2A3340;
+  --accent:#6FA2F0; --accent-soft:#1D2B42; --warn:#FB923C; --warn-soft:#3A2414; --ok:#4ADE80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161D; --surface:#1A2029; --fg:#E7ECF3; --muted:#9AA4B2; --line:#2A3340;
+  --accent:#6FA2F0; --accent-soft:#1D2B42; --warn:#FB923C; --warn-soft:#3A2414; --ok:#4ADE80; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px}
+.wrap{max-width:980px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:22px;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+select,input.pid{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);min-width:0}
+button{font:inherit;font-size:14px;font-weight:700;border-radius:999px;padding:9px 18px;border:1px solid var(--accent);cursor:pointer}
+.primary{background:var(--accent);color:#fff}
+.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.timer{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.clock{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em;min-width:110px}
+.bar{flex:1;min-width:160px;height:8px;background:var(--accent-soft);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;width:100%;background:var(--accent);transition:width .9s linear}
+.state{font-size:13px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.state.warn{background:var(--warn-soft);color:var(--warn)}
+.state.end{background:var(--fg);color:var(--bg)}
+.msg{font-size:14px;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 16px}
+.q{display:flex;align-items:center;gap:8px;font-size:18px;font-variant-numeric:tabular-nums;padding:6px 0;border-bottom:1px solid var(--line)}
+.q .n{font-size:11px;color:var(--muted);width:22px;text-align:right}
+.q input{width:58px;font:inherit;font-size:18px;text-align:center;padding:4px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg)}
+.q input:disabled{opacity:.7}
+.q.right input{border-color:var(--ok)}.q.wrong input{border-color:var(--warn)}
+.locked .grid{filter:grayscale(.2)}
+details summary{cursor:pointer;font-weight:700}
+details .msg p{margin:.5em 0}
+.stats{display:flex;flex-wrap:wrap;gap:20px;font-variant-numeric:tabular-nums}
+.stats b{font-size:22px;display:block}
+.cover{display:grid;place-items:center;text-align:center;padding:40px 16px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
+</style>
+<style>*{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>뺄셈 스트레스 과업</h1>
+    <div class="sub">3단계 스트레스 과업 · 받아내림이 있는 두 자리 수 뺄셈 60문제 · 제한 시간 5분</div>
+  </header>
+
+  <section class="panel controls" aria-label="회기 설정">
+    <label for="pid">참여자 번호<input class="pid" id="pid" placeholder="예: P03"></label>
+    <label for="session">회기<select id="session"><option value="1">1회기</option><option value="2">2회기</option></select></label>
+    <label for="group">집단<select id="group"><option value="A">A집단 (합성소재 → 젤라틴)</option><option value="B">B집단 (젤라틴 → 합성소재)</option></select></label>
+    <label for="set">문제 세트<select id="set"><option value="A">세트 A</option><option value="B">세트 B</option></select></label>
+    <button class="primary" id="start">시작</button>
+    <button class="ghost" id="reset">처음으로</button>
+  </section>
+
+  <section class="panel timer" aria-live="polite">
+    <div class="clock" id="clock">5:00</div>
+    <div class="bar"><i id="fill"></i></div>
+    <span class="state" id="state">대기</span>
+    <div class="msg" id="msg" style="flex-basis:100%">1번부터 차례대로 최대한 빠르고 정확하게 풀어 주세요. 계산은 머릿속으로만 하고 답만 입력해 주세요.</div>
+  </section>
+
+  <section class="panel" id="board">
+    <div class="cover" id="cover">시작을 누르면 문제가 나타납니다.<br>답을 입력하고 Enter를 누르면 다음 문제로 넘어갑니다.</div>
+    <div class="grid" id="grid" hidden></div>
+  </section>
+
+  <section class="panel" id="result" hidden>
+    <strong>과업 종료 · 연구자 확인용</strong>
+    <div class="stats" style="margin-top:10px">
+      <div><b id="sAns">0</b><span class="sub">입력한 문제</span></div>
+      <div><b id="sOk">0</b><span class="sub">정답</span></div>
+      <div><b id="sSet">-</b><span class="sub">세트</span></div>
+    </div>
+    <p class="sub">정답 수는 채점하지 않고 과업이 너무 쉽거나 어려운지 확인하는 용도로만 씁니다. 바로 현재 상태 VAS ②를 표시하게 해 주세요.</p>
+  </section>
+
+</div>
+
+<script>
+const SETS={"A": [[54, 18], [90, 53], [31, 13], [83, 47], [60, 44], [82, 18], [31, 15], [81, 38], [56, 29], [74, 17], [70, 33], [32, 18], [62, 18], [90, 74], [53, 24], [80, 19], [65, 49], [81, 66], [80, 16], [40, 14], [92, 29], [80, 23], [50, 21], [60, 27], [84, 15], [44, 15], [63, 27], [81, 28], [93, 49], [60, 42], [65, 38], [91, 57], [70, 14], [40, 27], [88, 59], [41, 27], [40, 25], [34, 19], [84, 58], [73, 36], [90, 22], [34, 16], [42, 27], [33, 15], [45, 27], [93, 44], [32, 17], [52, 36], [61, 32], [82, 54], [63, 24], [86, 37], [71, 25], [94, 56], [52, 15], [83, 36], [71, 57], [40, 13], [66, 48], [65, 27]], "B": [[40, 23], [81, 38], [44, 26], [41, 27], [84, 65], [52, 19], [91, 78], [91, 62], [50, 34], [81, 22], [50, 22], [57, 29], [50, 21], [70, 19], [50, 17], [88, 59], [60, 16], [55, 28], [47, 18], [52, 39], [62, 33], [60, 12], [60, 38], [83, 55], [72, 36], [52, 23], [91, 63], [72, 24], [91, 17], [52, 17], [90, 51], [71, 26], [45, 18], [52, 34], [56, 18], [50, 23], [55, 26], [63, 28], [51, 36], [40, 15], [71, 59], [84, 35], [71, 25], [86, 38], [96, 19], [56, 27], [71, 44], [60, 25], [62, 27], [44, 25], [65, 49], [74, 37], [70, 16], [62, 17], [52, 24], [90, 32], [50, 12], [42, 28], [81, 57], [85, 36]]};
+const DUR=300;
+const $=id=>document.getElementById(id);
+let left=DUR,tick=null,running=false;
+function autoSet(){const s=$('session').value,g=$('group').value;$('set').value=(g==='A')===(s==='1')?'A':'B';}
+$('session').onchange=autoSet;$('group').onchange=autoSet;autoSet();
+function fmt(t){return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');}
+function render(){
+  const g=$('grid');g.innerHTML='';
+  SETS[$('set').value].forEach(([a,b],i)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML='<span class="n">'+(i+1)+'</span><span>'+a+' − '+b+' =</span>';
+    const inp=document.createElement('input');inp.id='q'+i;inp.inputMode='numeric';inp.autocomplete='off';inp.setAttribute('aria-label',(i+1)+'번 답');
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const n=$('q'+(i+1));if(n)n.focus();}});
+    d.appendChild(inp);g.appendChild(d);
+  });
+}
+function setState(t,cls){const s=$('state');s.textContent=t;s.className='state'+(cls?' '+cls:'');}
+function finish(){
+  clearInterval(tick);running=false;left=0;$('clock').textContent='0:00';$('fill').style.width='0%';
+  setState('종료','end');$('msg').textContent='그만. 손을 떼 주세요. 이어서 현재 상태 VAS ②를 표시합니다.';
+  document.body.classList.add('locked');
+  const set=SETS[$('set').value];let ans=0,ok=0;
+  set.forEach(([a,b],i)=>{const inp=$('q'+i);inp.disabled=true;const v=inp.value.trim();if(v!==''){ans++;const r=Number(v)===a-b;if(r)ok++;inp.parentElement.classList.add(r?'right':'wrong');}});
+  $('sAns').textContent=ans;$('sOk').textContent=ok;$('sSet').textContent=$('set').value;$('result').hidden=false;
+  $('start').disabled=true;
+}
+$('start').onclick=()=>{
+  if(running)return;render();$('cover').hidden=true;$('grid').hidden=false;$('result').hidden=true;
+  ['session','group','set','pid'].forEach(k=>$(k).disabled=true);
+  running=true;left=DUR;setState('진행 중');$('start').disabled=true;$('q0').focus();
+  const t0=Date.now();
+  tick=setInterval(()=>{left=Math.max(0,DUR-Math.floor((Date.now()-t0)/1000));$('clock').textContent=fmt(left);$('fill').style.width=(left/DUR*100)+'%';
+    if(left<=60&&left>0){setState('1분 남았습니다','warn');}
+    if(left===0)finish();},250);
+};
+$('reset').onclick=()=>{clearInterval(tick);running=false;left=DUR;$('clock').textContent='5:00';$('fill').style.width='100%';setState('대기');
+  $('msg').textContent='1번부터 차례대로 최대한 빠르고 정확하게 풀어 주세요. 계산은 머릿속으로만 하고 답만 입력해 주세요.';
+  document.body.classList.remove('locked');$('grid').hidden=true;$('grid').innerHTML='';$('cover').hidden=false;$('result').hidden=true;$('start').disabled=false;
+  ['session','group','set','pid'].forEach(k=>$(k).disabled=false);};
+</script>
+
+</body>
+</html>
